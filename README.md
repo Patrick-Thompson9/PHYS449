@@ -1,7 +1,7 @@
 # PHYS449 Machine Learning in Physics
 
-- name: *your name*
-- student ID: *your student ID*
+- name: Patrick Thompson
+- student ID: 20806385
 
 ## Instructions
 
