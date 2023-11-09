@@ -8,6 +8,9 @@ def load_data(file_name='in.txt'):
     Load the input data using a file_name, assuming it is in the data folder.
     Return array of spins in form of integers.
     '''
+    print("HELLLOOOOO")
+    print(os.listdir())
+    print('hi')
     data = np.loadtxt('data/'+file_name, dtype=str)
     new_data = np.empty((len(data), len(data[0])))
     for i in range(len(data)):
@@ -50,9 +53,31 @@ def MCMC(couplers, current_state, new_state):
         else:
             return current_state
 
+def make_random_row(N):
+    '''
+    make a random row of N spin sites (each 1 or -1)
+    '''
+    row = np.sign(np.random.random_sample((N,)) - 0.5)
+    return row
+
+
+def run_MCMC(couplers, trials=100, N=4):
+    row1 = make_random_row(N)
+    row2 = make_random_row(N)
+    current_row = make_random_row(N)
+
+    for i in range(trials):
+        row2 = make_random_row(N)
+        new_row = MCMC(couplers, current_row, row2)
+        current_row = new_row
+
+    return current_row
+
 
 def main():
+    run_MCMC('x')
     load_data()
+    
 
 
 if __name__ == '__main__':
