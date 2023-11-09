@@ -8,9 +8,6 @@ def load_data(file_name='in.txt'):
     Load the input data using a file_name, assuming it is in the data folder.
     Return array of spins in form of integers.
     '''
-    print("HELLLOOOOO")
-    print(os.listdir())
-    print('hi')
     data = np.loadtxt('data/'+file_name, dtype=str)
     new_data = np.empty((len(data), len(data[0])))
     for i in range(len(data)):
@@ -37,6 +34,10 @@ def energy(couplers, row):
 
 
 def MCMC(couplers, current_state, new_state):
+    '''
+    Monte Carlo Markov Chain algorithm that moves from current_state to a new_state if 
+    lower energy or by chance. Uses couplers to calculate energy.
+    '''
     current_energy = energy(current_state)
     new_energy = energy(current_state)
     dE = new_energy - current_energy
@@ -62,6 +63,10 @@ def make_random_row(N):
 
 
 def run_MCMC(couplers, trials=100, N=4):
+    ''''
+    Propagate down the Monte Carlo Markov Chain a number of trials. New random rows
+    of N spins are made for each step.
+    '''
     row1 = make_random_row(N)
     row2 = make_random_row(N)
     current_row = make_random_row(N)
@@ -75,7 +80,6 @@ def run_MCMC(couplers, trials=100, N=4):
 
 
 def main():
-    run_MCMC('x')
     load_data()
     
 
