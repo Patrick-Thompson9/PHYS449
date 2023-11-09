@@ -33,6 +33,24 @@ def energy(couplers, row):
         return energy
 
 
+def MCMC(couplers, current_state, new_state):
+    current_energy = energy(current_state)
+    new_energy = energy(current_state)
+    dE = new_energy - current_energy
+
+    # if new state is lower energy, take it. If not, take it with some times
+    if dE < 0:
+        return new_state
+    
+    else:
+        probability = np.exp(dE) # Beta = 1
+        chance = random.uniform(0, 1)
+        if chance < probability:
+            return new_state
+        else:
+            return current_state
+
+
 def main():
     load_data()
 
