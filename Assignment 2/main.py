@@ -5,6 +5,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import numpy as np
+import matplotlib.pyplot as plt
 
 def load_data(file_path):
     '''
@@ -89,7 +90,11 @@ def train_boltzmann_machine(model, data_loader, epochs, learning_rate):
     criterion = nn.MSELoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate)
 
+    loss_values = []  # to store the loss values for each epoch
+
     for epoch in range(1, epochs + 1):
+        epoch_loss = 0.0  # to store the total loss for the current epoch
+
         for data in data_loader:
             optimizer.zero_grad()
             outputs = model(data)
@@ -97,13 +102,26 @@ def train_boltzmann_machine(model, data_loader, epochs, learning_rate):
             loss.backward()
             optimizer.step()
 
-        print(f'Epoch {epoch}/{epochs}, Loss: {loss.item()}')
+            epoch_loss += loss.item()
+
+        loss_values.append(epoch_loss)
+
+        print(f'Epoch {epoch}/{epochs}, Loss: {epoch_loss}')
+
+    # Plot the loss versus epochs
+    plt.plot(range(1, epochs + 1), loss_values, marker='o')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss vs. Epochs')
+    plt.show()
 
 def main():
     parser = argparse.ArgumentParser(description='Train a Boltzmann Machine on Ising chain data')
     parser.add_argument('file_path', type=str, help='Path to the input data file')
     parser.add_argument('--epochs', type=int, default=50, help='Number of training epochs')
     parser.add_argument('--learning_rate', type=float, default=0.01, help='Learning rate for SGD')
+    parser.add_argument('--hidden_size1', type=int, default=16, help='Size of the first hidden layer')
+    parser.add_argument('--hidden_size2', type=int, default=8, help='Size of the second hidden layer')
     args = parser.parse_args()
 
     # Load data
