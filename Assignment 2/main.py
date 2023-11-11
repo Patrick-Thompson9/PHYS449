@@ -2,72 +2,83 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
+import torch.nn.functional as F
 import numpy as np
-
-class OptimizedModel(nn.Module):
-    def __init__(self, input_size, hidden_size1, hidden_size2, output_size):
-        super(OptimizedModel, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size1)
-        self.relu1 = nn.ReLU()
-        self.fc2 = nn.Linear(hidden_size1, hidden_size2)
-        self.relu2 = nn.ReLU()
-        self.fc3 = nn.Linear(hidden_size2, output_size)
-
-    def forward(self, x):
-        x = self.relu1(self.fc1(x))
-        x = self.relu2(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
-def train_optimized_model(model, data_loader, epochs, learning_rate):
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-
-    for epoch in range(epochs):
-        model.train()
-        total_loss = 0.0
-
-        for data in data_loader:
-            inputs, targets = data
-            optimizer.zero_grad()
-            outputs = model(inputs.float())
-            loss = criterion(outputs, targets.float())
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-
-        print(f'Epoch {epoch + 1}/{epochs}, Loss: {total_loss / len(data_loader)}')
 
 def load_data(file_path):
     with open(file_path, 'r') as file:
-        lines = file.readlines()
-    
-    input_size = len(lines[0].strip())  # Determine the input size based on the first row
-    data = [list(map(lambda x: 1 if x == '+' else -1, line.strip())) for line in lines]
-    
-    return torch.from_numpy(np.array(data, dtype=np.float32)), input_size
+        lines = file.read().splitlines()
+
+    input_size = len(lines[0])
+    data = np.array([[1.0 if c == '+' else -1.0 for c in line] for line in lines], dtype=np.float32)
+
+    return torch.from_numpy(data), input_size
+
+class BoltzmannMachine(nn.Module):
+    def __init__(self, input_size):
+        super(BoltzmannMachine, self).__init__()
+        self.fc1 = nn.Linear(input_size, input_size, dtype=torch.float32)
+        self.fc2 = nn.Linear(input_size, input_size, dtype=torch.float32)
+        self.fc3 = nn.Linear(input_size, input_size, dtype=torch.float32)
+
+    def forward(self, x):
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+    def get_coupler_dict(self, num_spins):
+        coupler_dict = {}
+        for i, param in enumerate(self.parameters()):
+            if len(param.data.shape) == 2:  # Check if the parameter is a 2D weight matrix
+                for j in range(param.data.shape[0]):
+                    next_spin = (j + 1) % param.data.shape[0]
+                    coupler_dict[(j, next_spin)] = param.data[j, 0].item()/abs(param.data[j, 0].item())  # Normalize the coupler to 1 or -1
+
+        # Ensure the dictionary matches the number of spins in each line
+        coupler_dict = dict(sorted(coupler_dict.items())[:num_spins])
+        return coupler_dict
+
+def train_boltzmann_machine(model, data_loader, epochs, learning_rate):
+    criterion = nn.MSELoss()
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate)
+
+    for epoch in range(1, epochs + 1):
+        for data in data_loader:
+            optimizer.zero_grad()
+            outputs = model(data)
+            loss = criterion(outputs, data)
+            loss.backward()
+            optimizer.step()
+
+        print(f'Epoch {epoch}/{epochs}, Loss: {loss.item()}')
 
 def main():
-    parser = argparse.ArgumentParser(description='Neural Network Training with argparse')
-    parser.add_argument('file_path', type=str, help='Path to the input file')
-    parser.add_argument('--hidden_size1', type=int, default=64, help='Size of the first hidden layer')
-    parser.add_argument('--hidden_size2', type=int, default=32, help='Size of the second hidden layer')
-    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for training')
+    parser = argparse.ArgumentParser(description='Train a Boltzmann Machine on Ising chain data')
+    parser.add_argument('file_path', type=str, help='Path to the input data file')
     parser.add_argument('--epochs', type=int, default=50, help='Number of training epochs')
-    parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
-
+    parser.add_argument('--learning_rate', type=float, default=0.01, help='Learning rate for SGD')
+    parser.add_argument('--hidden_size1', type=int, default=16, help='Size of the first hidden layer')
+    parser.add_argument('--hidden_size2', type=int, default=8, help='Size of the second hidden layer')
     args = parser.parse_args()
 
-    train_data, input_size = load_data(args.file_path)
-    output_size = input_size  # Assuming output size is the same as input size
-    train_labels = train_data.clone()  # Use the input as the target for simplicity
+    # Load data
+    data, input_size = load_data(args.file_path)
 
-    train_dataset = TensorDataset(train_data, train_labels)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    # Initialize the Boltzmann Machine
+    model = BoltzmannMachine(input_size)
 
-    model = OptimizedModel(input_size, args.hidden_size1, args.hidden_size2, output_size)
-    train_optimized_model(model, train_loader, args.epochs, args.learning_rate)
+    # Create DataLoader
+    data_loader = DataLoader(data, batch_size=1, shuffle=True)
 
-if __name__ == '__main__':
+    # Train the Boltzmann machine
+    train_boltzmann_machine(model, data_loader, args.epochs, args.learning_rate)
+
+    # Print the coupler dictionary
+    coupler_dict = model.get_coupler_dict(input_size)
+    print("Predicted Coupler Dictionary:")
+    print(coupler_dict)
+
+if __name__ == "__main__":
     main()
