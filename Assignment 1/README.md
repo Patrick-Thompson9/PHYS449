@@ -2,6 +2,7 @@
 - Recurent Neural Network for binary multiplication
 - RelU activation function
 - Sigmoid output layer
+- Plots loss, saves plot and model in Ouput Folder
   
 ## Dependencies
 
