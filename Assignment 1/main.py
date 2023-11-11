@@ -68,8 +68,11 @@ def parse_arguments():
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
     parser.add_argument("--random_seed", type=int, default=42, help="Random seed for dataset generation")
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for optimization")
+    parser.add_argument("--training_size", type=int, default=8000, help="Size of the training dataset")
+    parser.add_argument("--test_size", type=int, default=2000, help="Size of the test dataset")
 
     return parser.parse_args()
+
 
 def main():
     args = parse_arguments()
@@ -80,7 +83,7 @@ def main():
     output_size = 16
 
     # Generate dataset
-    X_train, Y_train, X_test, Y_test = generate_dataset(seed=args.random_seed, train_size=8000, test_size=2000)
+    X_train, Y_train, X_test, Y_test = generate_dataset(seed=args.random_seed, train_size=args.training_size, test_size=args.test_size)
 
     # Create DataLoader for training and testing
     train_dataset = BinaryMultiplicationDataset(X_train, Y_train)
@@ -121,3 +124,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
