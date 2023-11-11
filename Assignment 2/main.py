@@ -1,11 +1,13 @@
-import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
+import argparse
+import json
+import os
 
 def load_data(file_path):
     '''
@@ -74,7 +76,7 @@ class BoltzmannMachine(nn.Module):
         coupler_dict = dict(sorted(coupler_dict.items())[:num_spins])
         return coupler_dict
 
-def train_boltzmann_machine(model, data_loader, epochs, learning_rate):
+def train_boltzmann_machine(model, data_loader, epochs, learning_rate, output_folder):
     '''
     Train the Boltzmann Machine
     
@@ -83,6 +85,7 @@ def train_boltzmann_machine(model, data_loader, epochs, learning_rate):
     - data_loader: DataLoader of the input data
     - epochs: Number of training epochs
     - learning_rate: Learning rate for SGD
+    - output_folder: Folder name to store the output files
     
     Output:
     - None
@@ -93,8 +96,8 @@ def train_boltzmann_machine(model, data_loader, epochs, learning_rate):
     loss_values = []  # to store the loss values for each epoch
 
     for epoch in range(1, epochs + 1):
-        epoch_loss = 0.0  # to store the total loss for the current epoch
 
+        epoch_loss = 0.0  # to store the total loss for the current epoch
         for data in data_loader:
             optimizer.zero_grad()
             outputs = model(data)
@@ -102,26 +105,33 @@ def train_boltzmann_machine(model, data_loader, epochs, learning_rate):
             loss.backward()
             optimizer.step()
 
-            epoch_loss += loss.item()
-
+        epoch_loss += loss.item()
         loss_values.append(epoch_loss)
 
-        print(f'Epoch {epoch}/{epochs}, Loss: {epoch_loss}')
-
+        print(f'Epoch {epoch}/{epochs}, Loss: {loss.item()}')
+    
     # Plot the loss versus epochs
     plt.plot(range(1, epochs + 1), loss_values, marker='o')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.title('Loss vs. Epochs')
+
+    # Save the plot in the 'output' folder
+    os.makedirs(output_folder, exist_ok=True)
+    output_path = os.path.join(output_folder, 'loss_vs_epochs.png')
+    plt.savefig(output_path)
     plt.show()
+
+    # Save the model in the 'output' folder
+    model_path = os.path.join(output_folder, 'boltzmann_model.pth')
+    torch.save(model.state_dict(), model_path)
 
 def main():
     parser = argparse.ArgumentParser(description='Train a Boltzmann Machine on Ising chain data')
     parser.add_argument('file_path', type=str, help='Path to the input data file')
     parser.add_argument('--epochs', type=int, default=50, help='Number of training epochs')
-    parser.add_argument('--learning_rate', type=float, default=0.01, help='Learning rate for SGD')
-    parser.add_argument('--hidden_size1', type=int, default=16, help='Size of the first hidden layer')
-    parser.add_argument('--hidden_size2', type=int, default=8, help='Size of the second hidden layer')
+    parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate for SGD')
+    parser.add_argument('--output_folder', type=str, default='output', help='Folder name to store the output files')
     args = parser.parse_args()
 
     # Load data
@@ -134,12 +144,17 @@ def main():
     data_loader = DataLoader(data, batch_size=1, shuffle=True)
 
     # Train the Boltzmann machine
-    train_boltzmann_machine(model, data_loader, args.epochs, args.learning_rate)
+    train_boltzmann_machine(model, data_loader, args.epochs, args.learning_rate, args.output_folder)
 
     # Print the coupler dictionary
     coupler_dict = model.get_coupler_dict(input_size)
     print("Predicted Coupler Dictionary:")
     print(coupler_dict)
+
+    # Save the coupler dictionary as a text file in the 'output' folder
+    coupler_path = os.path.join('output', 'coupler_dictionary.txt')
+    with open(coupler_path, 'w') as coupler_file:
+        coupler_file.write('{0}'.format(coupler_dict))
 
 
 if __name__ == "__main__":
