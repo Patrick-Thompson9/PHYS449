@@ -104,8 +104,6 @@ def main():
     parser.add_argument('file_path', type=str, help='Path to the input data file')
     parser.add_argument('--epochs', type=int, default=50, help='Number of training epochs')
     parser.add_argument('--learning_rate', type=float, default=0.01, help='Learning rate for SGD')
-    parser.add_argument('--hidden_size1', type=int, default=16, help='Size of the first hidden layer')
-    parser.add_argument('--hidden_size2', type=int, default=8, help='Size of the second hidden layer')
     args = parser.parse_args()
 
     # Load data
