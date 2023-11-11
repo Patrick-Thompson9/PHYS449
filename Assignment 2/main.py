@@ -6,7 +6,6 @@ import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt 
 import argparse
-import json
 import os
 
 def load_data(file_path):
