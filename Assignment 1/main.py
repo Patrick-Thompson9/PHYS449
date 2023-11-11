@@ -9,6 +9,17 @@ import matplotlib.pyplot as plt
 # Define the RNN model with two hidden layers and ReLU activation
 class ModifiedRNNModel(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
+        '''
+        Define the RNN model with two hidden layers and ReLU activation.
+
+        Inputs:
+        input_size: Size of the input
+        hidden_size: Size of the hidden layer
+        output_size: Size of the output
+
+        Outputs:
+        out: Output of the model
+        '''
         super(ModifiedRNNModel, self).__init__()
         self.rnn = nn.RNN(input_size, hidden_size, batch_first=True)
         self.fc_hidden1 = nn.Linear(hidden_size, hidden_size)
@@ -17,6 +28,15 @@ class ModifiedRNNModel(nn.Module):
         self.fc_output = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
+        ''''
+        Foward propagation of the model.
+
+        inputs:
+        x: Input to the model
+
+        outputs:
+        out: Output of the model
+        '''
         out, _ = self.rnn(x)
         out = self.fc_hidden1(out)
         out = self.relu(out)
@@ -28,6 +48,9 @@ class ModifiedRNNModel(nn.Module):
 
 # Custom dataset class
 class BinaryMultiplicationDataset(Dataset):
+    '''
+    Custom dataset class for binary multiplication.
+    '''
     def __init__(self, X, Y):
         self.X = torch.from_numpy(X).float()
         self.Y = torch.from_numpy(Y).float()
@@ -40,6 +63,20 @@ class BinaryMultiplicationDataset(Dataset):
 
 # Function to generate dataset
 def generate_dataset(seed, train_size, test_size):
+    '''
+    Generate dataset for binary multiplication and split into trainig and test sets.
+
+    Inputs:
+    seed: Random seed for reproducibility
+    train_size: Size of the training dataset
+    test_size: Size of the test dataset
+
+    Outputs:
+    X_train: Training inputs
+    Y_train: Training labels
+    X_test: Test inputs
+    Y_test: Test labels
+    '''
     np.random.seed(seed)
 
     X_train, Y_train, X_test, Y_test = [], [], [], []
@@ -65,6 +102,9 @@ def generate_dataset(seed, train_size, test_size):
     return np.array(X_train), np.array(Y_train), np.array(X_test), np.array(Y_test)
 
 def parse_arguments():
+    '''
+    Define the arguments and help statements.
+    '''
     parser = argparse.ArgumentParser(description="RNN Binary Multiplication Training")
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
