@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
+import argparse
 
 # Define the RNN model with one hidden layer and ReLU activation
 class ModifiedRNNModel(nn.Module):
@@ -58,54 +59,61 @@ def generate_dataset(seed, train_size, test_size):
 
     return np.array(X_train), np.array(Y_train), np.array(X_test), np.array(Y_test)
 
-# Hyperparameters
-input_size = 16
-hidden_size = 16
-output_size = 16  # Output size should be 16 for the binary representation of the product
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="RNN Binary Multiplication Training")
+    parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
+    parser.add_argument("--random_seed", type=int, default=42, help="Random seed for dataset generation")
 
-# Hyperparameters
-input_size = 16
-hidden_size = 16
-output_size = 16
-epochs = 50
-batch_size = 32
+    return parser.parse_args()
 
-# Generate dataset
-X_train, Y_train, X_test, Y_test = generate_dataset(seed=42, train_size=8000, test_size=2000)
+def main():
+    args = parse_arguments()
 
-# Create DataLoader for training and testing
-train_dataset = BinaryMultiplicationDataset(X_train, Y_train)
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    # Hyperparameters
+    input_size = 16
+    hidden_size = 16
+    output_size = 16
 
-test_dataset = BinaryMultiplicationDataset(X_test, Y_test)
-test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    # Generate dataset
+    X_train, Y_train, X_test, Y_test = generate_dataset(seed=args.random_seed, train_size=8000, test_size=2000)
 
-# Instantiate the modified model
-model = ModifiedRNNModel(input_size, hidden_size, output_size)
+    # Create DataLoader for training and testing
+    train_dataset = BinaryMultiplicationDataset(X_train, Y_train)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
-# Define loss and optimizer
-criterion = nn.BCEWithLogitsLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+    test_dataset = BinaryMultiplicationDataset(X_test, Y_test)
+    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
-# Training loop
-for epoch in range(epochs):
-    print(f"Epoch {epoch + 1}/{epochs}")
-    for inputs, labels in train_loader:
-        optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
+    # Instantiate the modified model
+    model = ModifiedRNNModel(input_size, hidden_size, output_size)
 
-    # Validation loss
-    with torch.no_grad():
-        model.eval()
-        val_loss = 0.0
-        for inputs, labels in test_loader:
+    # Define loss and optimizer
+    criterion = nn.BCEWithLogitsLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+    # Training loop
+    for epoch in range(args.epochs):
+        print(f"Epoch {epoch + 1}/{args.epochs}")
+        for inputs, labels in train_loader:
+            optimizer.zero_grad()
             outputs = model(inputs)
-            val_loss += criterion(outputs, labels).item()
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
 
-        val_loss /= len(test_loader)
-        print(f"Training Loss: {loss.item()}, Validation Loss: {val_loss}")
+        # Validation loss
+        with torch.no_grad():
+            model.eval()
+            val_loss = 0.0
+            for inputs, labels in test_loader:
+                outputs = model(inputs)
+                val_loss += criterion(outputs, labels).item()
 
-    model.train()
+            val_loss /= len(test_loader)
+            print(f"Training Loss: {loss.item()}, Validation Loss: {val_loss}")
+
+        model.train()
+
+if __name__ == "__main__":
+    main()
