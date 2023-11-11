@@ -7,6 +7,16 @@ import torch.nn.functional as F
 import numpy as np
 
 def load_data(file_path):
+    '''
+    Load the data from the file and return a tensor of the data and the input size
+
+    Input:
+    - file_path: Path to the input data file
+
+    Output:
+    - data: Tensor of the data
+    - input_size: Size of the input
+    '''
     with open(file_path, 'r') as file:
         lines = file.read().splitlines()
 
@@ -16,6 +26,11 @@ def load_data(file_path):
     return torch.from_numpy(data), input_size
 
 class BoltzmannMachine(nn.Module):
+    '''
+    Boltzmann Machine with 2 hidden layers
+    Relu activation function is used for the hidden layers
+    Output layer is a linear layer
+    '''
     def __init__(self, input_size):
         super(BoltzmannMachine, self).__init__()
         self.fc1 = nn.Linear(input_size, input_size, dtype=torch.float32)
@@ -23,12 +38,30 @@ class BoltzmannMachine(nn.Module):
         self.fc3 = nn.Linear(input_size, input_size, dtype=torch.float32)
 
     def forward(self, x):
+        '''
+        Forward propagation of the Boltzmann Machine
+
+        Input:
+        - x: Input data
+
+        Output:
+        - x: Output data
+        '''
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
 
     def get_coupler_dict(self, num_spins):
+        '''
+        Generate the coupler dictionary of the Boltzmann Machine
+
+        Input:
+        - num_spins: Number of spins in each line
+
+        Output:
+        - coupler_dict: Coupler dictionary of the Boltzmann Machine
+        '''
         coupler_dict = {}
         for i, param in enumerate(self.parameters()):
             if len(param.data.shape) == 2:  # Check if the parameter is a 2D weight matrix
@@ -41,6 +74,18 @@ class BoltzmannMachine(nn.Module):
         return coupler_dict
 
 def train_boltzmann_machine(model, data_loader, epochs, learning_rate):
+    '''
+    Train the Boltzmann Machine
+    
+    Input:
+    - model: Boltzmann Machine
+    - data_loader: DataLoader of the input data
+    - epochs: Number of training epochs
+    - learning_rate: Learning rate for SGD
+    
+    Output:
+    - None
+    '''
     criterion = nn.MSELoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate)
 
@@ -79,6 +124,7 @@ def main():
     coupler_dict = model.get_coupler_dict(input_size)
     print("Predicted Coupler Dictionary:")
     print(coupler_dict)
+
 
 if __name__ == "__main__":
     main()
