@@ -1,5 +1,5 @@
 # PHYS449
-- Reccurent Neural Network
+- Recurent Neural Network for binary multiplication
 - RelU activation function
 - Sigmoid output layer
   
