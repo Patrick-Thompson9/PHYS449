@@ -1,88 +1,71 @@
+import argparse
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
 
-import numpy as np
-import os
+class BoltzmannMachine(nn.Module):
+    def __init__(self, input_size, hidden_size1, hidden_size2, output_size):
+        super(BoltzmannMachine, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size1)
+        self.relu1 = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_size1, hidden_size2)
+        self.relu2 = nn.ReLU()
+        self.fc3 = nn.Linear(hidden_size2, output_size)
 
+    def forward(self, x):
+        x = self.relu1(self.fc1(x))
+        x = self.relu2(self.fc2(x))
+        x = self.fc3(x)
+        return x
 
-def load_data(file_name='in.txt'):
-    '''
-    Load the input data using a file_name, assuming it is in the data folder.
-    Return array of spins in form of integers.
-    '''
-    data = np.loadtxt('data/'+file_name, dtype=str)
-    new_data = np.empty((len(data), len(data[0])))
-    for i in range(len(data)):
-        for j in range(len(data[i])):
-            if data[i][j] == "+":
-                new_data[i][j] = 1.0
-            else:
-                new_data[i][j] = -1.0
-    return new_data
-
-def energy(couplers, row):
-    '''
-    Calculates the energy of a row of spin sites using the couplers and spins.
-    '''
-    energy = 0
-    for i in range(len(row)):
-        # if on the last site, the neighbor will be the first site in the row
-        if i == len(row) - 1:
-            j = 0
-        else:
-            j = i + 1
-        energy += row[i]*row[j]*couplers[i]
-        return energy
-
-
-def MCMC(couplers, current_state, new_state):
-    '''
-    Monte Carlo Markov Chain algorithm that moves from current_state to a new_state if 
-    lower energy or by chance. Uses couplers to calculate energy.
-    '''
-    current_energy = energy(current_state)
-    new_energy = energy(current_state)
-    dE = new_energy - current_energy
-
-    # if new state is lower energy, take it. If not, take it with some times
-    if dE < 0:
-        return new_state
+def load_data(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
     
-    else:
-        probability = np.exp(dE) # Beta = 1
-        chance = random.uniform(0, 1)
-        if chance < probability:
-            return new_state
-        else:
-            return current_state
+    # Determine the number of spins based on the first line
+    num_spins = len(lines[0].strip())
 
-def make_random_row(N):
-    '''
-    make a random row of N spin sites (each 1 or -1)
-    '''
-    row = np.sign(np.random.random_sample((N,)) - 0.5)
-    return row
+    input_size = num_spins
+    hidden_size1 = num_spins
+    hidden_size2 = num_spins
+    output_size = num_spins
 
+    data = []
+    for line in lines:
+        # Convert '+' to 1 and '-' to -1
+        line_data = [1 if s == '+' else -1 for s in line.strip()]
+        data.append(line_data)
 
-def run_MCMC(couplers, trials=100, N=4):
-    ''''
-    Propagate down the Monte Carlo Markov Chain a number of trials. New random rows
-    of N spins are made for each step.
-    '''
-    row1 = make_random_row(N)
-    row2 = make_random_row(N)
-    current_row = make_random_row(N)
+    return torch.tensor(data, dtype=torch.float32), input_size, hidden_size1, hidden_size2, output_size
 
-    for i in range(trials):
-        row2 = make_random_row(N)
-        new_row = MCMC(couplers, current_row, row2)
-        current_row = new_row
+def train_boltzmann_machine(model, data_loader, epochs, learning_rate):
+    criterion = nn.MSELoss()
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate)
 
-    return current_row
+    for epoch in range(epochs):
+        for data in data_loader:
+            optimizer.zero_grad()
+            outputs = model(data)
+            loss = criterion(outputs, data)
+            loss.backward()
+            optimizer.step()
 
+        print(f'Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}')
 
 def main():
-    load_data()
-    
+    parser = argparse.ArgumentParser(description="Train a Boltzmann Machine on Ising model data.")
+    parser.add_argument("file_path", type=str, help="Path to the input file")
+    parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
+    parser.add_argument("--learning_rate", type=float, default=0.01, help="Learning rate for SGD")
 
+    args = parser.parse_args()
 
-if __name__ == '__main__':
+    data, input_size, hidden_size1, hidden_size2, output_size = load_data(args.file_path)
+    model = BoltzmannMachine(input_size, hidden_size1, hidden_size2, output_size)
+    data_loader = DataLoader(data, batch_size=1, shuffle=True)
+
+    train_boltzmann_machine(model, data_loader, args.epochs, args.learning_rate)
+
+if __name__ == "__main__":
     main()
