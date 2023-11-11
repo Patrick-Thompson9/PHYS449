@@ -3,6 +3,10 @@
 - RelU activation function
 - Sigmoid output layer
 - Plots loss, saves plot and model in Ouput Folder
+
+## AI Statement
+- All code was generated through many chatgpt prompts
+- Model structure was optimized through my knowledge as well as chatgpt suggestions
   
 ## Dependencies
 
