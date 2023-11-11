@@ -64,6 +64,7 @@ def parse_arguments():
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
     parser.add_argument("--random_seed", type=int, default=42, help="Random seed for dataset generation")
+    parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for optimization")
 
     return parser.parse_args()
 
@@ -90,7 +91,7 @@ def main():
 
     # Define loss and optimizer
     criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)  # Use the learning rate from argparse
 
     # Training loop
     for epoch in range(args.epochs):
