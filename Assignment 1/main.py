@@ -1,77 +1,111 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
 import numpy as np
 
-# Set the random seed for reproducibility
-torch.manual_seed(42)
-np.random.seed(42)
-
-# Function to generate binary numbers for dataset
-def generate_binary_numbers(num_samples, max_digits=8):
-    binary_numbers = []
-    for _ in range(num_samples):
-        A = np.random.randint(2, size=np.random.randint(1, max_digits + 1))
-        B = np.random.randint(2, size=np.random.randint(1, max_digits + 1))
-        C = np.binary_repr(int(''.join(map(str, A)), 2) * int(''.join(map(str, B)), 2), width=16)
-        binary_numbers.append((A, B, C))
-    return binary_numbers
-
-# Function to create input and output bit strings
-def create_bit_strings(A, B, C):
-    input_str = ' '.join([f'{a} {b}' for a, b in zip(A, B)]) + ' 0'
-    output_str = ' '.join(C)
-    return input_str, output_str
-
-# Function to convert bit strings to tensors
-def bit_string_to_tensor(bit_string):
-    return torch.tensor([int(bit) for bit in bit_string.split()], dtype=torch.float32)
-
-# RNN Model
-class BinaryMultiplicationRNN(nn.Module):
+# Define the RNN model with one hidden layer and ReLU activation
+class ModifiedRNNModel(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
-        super(BinaryMultiplicationRNN, self).__init__()
+        super(ModifiedRNNModel, self).__init__()
         self.rnn = nn.RNN(input_size, hidden_size, batch_first=True)
-        self.fc = nn.Linear(hidden_size, output_size)
+        self.fc_hidden = nn.Linear(hidden_size, hidden_size)
+        self.relu = nn.ReLU()
+        self.fc_output = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
         out, _ = self.rnn(x)
-        out = self.fc(out)
+        out = self.fc_hidden(out)
+        out = self.relu(out)
+        out = self.fc_output(out)
         return out
 
-# Function to train the RNN model
-def train_rnn_model(model, train_loader, criterion, optimizer, num_epochs=100):
-    for epoch in range(num_epochs):
-        for inputs, targets in train_loader:
-            optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-            loss.backward()
-            optimizer.step()
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item()}')
+# Custom dataset class
+class BinaryMultiplicationDataset(Dataset):
+    def __init__(self, X, Y):
+        self.X = torch.from_numpy(X).float()
+        self.Y = torch.from_numpy(Y).float()
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.Y[idx]
+
+# Function to generate dataset
+def generate_dataset(seed, train_size, test_size):
+    np.random.seed(seed)
+
+    X_train, Y_train, X_test, Y_test = [], [], [], []
+
+    for _ in range(train_size + test_size):
+        A = np.random.randint(0, 2, size=(8,), dtype=int)
+        B = np.random.randint(0, 2, size=(8,), dtype=int)
+        C = np.binary_repr(np.dot(A, B), width=16)
+
+        # Create input sequence: a_0 b_0 a_1 b_1 ... a_n b_n
+        input_sequence = np.concatenate([A, B])
+
+        # Create output sequence: c_0 c_1 ... c_{2n-1} c_2n
+        output_sequence = [int(bit) for bit in C]
+
+        if len(X_train) < train_size:
+            X_train.append(input_sequence)
+            Y_train.append(output_sequence)
+        else:
+            X_test.append(input_sequence)
+            Y_test.append(output_sequence)
+
+    return np.array(X_train), np.array(Y_train), np.array(X_test), np.array(Y_test)
+
+# Hyperparameters
+input_size = 16
+hidden_size = 16
+output_size = 16  # Output size should be 16 for the binary representation of the product
+
+# Hyperparameters
+input_size = 16
+hidden_size = 16
+output_size = 16
+epochs = 50
+batch_size = 32
 
 # Generate dataset
-train_data = generate_binary_numbers(num_samples=1000)
-test_data = generate_binary_numbers(num_samples=100)
+X_train, Y_train, X_test, Y_test = generate_dataset(seed=42, train_size=8000, test_size=2000)
 
-# Convert dataset to bit strings and tensors
-train_data = [(bit_string_to_tensor(create_bit_strings(A, B, C)[0]), bit_string_to_tensor(create_bit_strings(A, B, C)[1])) for A, B, C in train_data]
-test_data = [(bit_string_to_tensor(create_bit_strings(A, B, C)[0]), bit_string_to_tensor(create_bit_strings(A, B, C)[1])) for A, B, C in test_data]
+# Create DataLoader for training and testing
+train_dataset = BinaryMultiplicationDataset(X_train, Y_train)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-# Create DataLoader
-train_loader = torch.utils.data.DataLoader(train_data, batch_size=32, shuffle=True)
+test_dataset = BinaryMultiplicationDataset(X_test, Y_test)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-# Initialize the RNN model
-model = BinaryMultiplicationRNN(input_size=1, hidden_size=64, output_size=1)
-criterion = nn.MSELoss()
+# Instantiate the modified model
+model = ModifiedRNNModel(input_size, hidden_size, output_size)
+
+# Define loss and optimizer
+criterion = nn.BCEWithLogitsLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-# Train the model
-train_rnn_model(model, train_loader, criterion, optimizer, num_epochs=10)
+# Training loop
+for epoch in range(epochs):
+    print(f"Epoch {epoch + 1}/{epochs}")
+    for inputs, labels in train_loader:
+        optimizer.zero_grad()
+        outputs = model(inputs)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
 
-# Test the model
-with torch.no_grad():
-    for inputs, targets in test_data:
-        outputs = model(inputs.unsqueeze(0))
-        predicted = torch.round(outputs.squeeze()).int()
-        print(f'Input: {inputs.int()}, Target: {targets.int()}, Predicted: {predicted}')
+    # Validation loss
+    with torch.no_grad():
+        model.eval()
+        val_loss = 0.0
+        for inputs, labels in test_loader:
+            outputs = model(inputs)
+            val_loss += criterion(outputs, labels).item()
+
+        val_loss /= len(test_loader)
+        print(f"Training Loss: {loss.item()}, Validation Loss: {val_loss}")
+
+    model.train()
