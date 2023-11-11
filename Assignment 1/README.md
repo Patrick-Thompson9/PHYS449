@@ -14,6 +14,7 @@
 - argparse
 - matplotlib
 - numpy
+- os
 
 ## Running `main.py`
 
