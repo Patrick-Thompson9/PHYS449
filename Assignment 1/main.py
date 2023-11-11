@@ -22,6 +22,7 @@ class ModifiedRNNModel(nn.Module):
         out = self.fc_hidden2(out)  # Second hidden layer
         out = self.relu(out)
         out = self.fc_output(out)
+        out = torch.sigmoid(out)  # Use sigmoid activation for binary classification
         return out
 
 # Custom dataset class
@@ -96,11 +97,12 @@ def main():
     model = ModifiedRNNModel(input_size, hidden_size, output_size)
 
     # Define loss and optimizer
-    criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)  # Use the learning rate from argparse
+    criterion = nn.BCELoss()  # Binary Cross Entropy Loss
+    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)  # Adjust learning rate
 
     # Training loop
     for epoch in range(args.epochs):
+        
         print(f"Epoch {epoch + 1}/{args.epochs}")
         for inputs, labels in train_loader:
             optimizer.zero_grad()
