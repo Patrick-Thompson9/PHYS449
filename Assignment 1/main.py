@@ -4,6 +4,7 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import argparse
+import matplotlib.pyplot as plt
 
 # Define the RNN model with two hidden layers and ReLU activation
 class ModifiedRNNModel(nn.Module):
@@ -98,11 +99,14 @@ def main():
 
     # Define loss and optimizer
     criterion = nn.BCELoss()  # Binary Cross Entropy Loss
-    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)  # Adjust learning rate
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)  # Adjust learning rate
+
+    # Lists to store losses for plotting
+    train_losses = []
+    val_losses = []
 
     # Training loop
     for epoch in range(args.epochs):
-        
         print(f"Epoch {epoch + 1}/{args.epochs}")
         for inputs, labels in train_loader:
             optimizer.zero_grad()
@@ -122,8 +126,21 @@ def main():
             val_loss /= len(test_loader)
             print(f"Training Loss: {loss.item()}, Validation Loss: {val_loss}")
 
+        # Append losses for plotting
+        train_losses.append(loss.item())
+        val_losses.append(val_loss)
+
         model.train()
+
+    # Plot the loss versus epochs
+    plt.plot(range(1, args.epochs + 1), train_losses, label='Training Loss')
+    plt.plot(range(1, args.epochs + 1), val_losses, label='Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.show()
 
 if __name__ == "__main__":
     main()
+
 
