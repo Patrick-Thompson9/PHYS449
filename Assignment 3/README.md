@@ -10,6 +10,7 @@
 - json
 - pandas
 - torch
+- torchvision
 - os
 - argparse
 - matplotlib
