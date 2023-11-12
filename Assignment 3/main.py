@@ -1,7 +1,6 @@
 import os
 import json
 import argparse
-import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import torch
@@ -238,14 +237,14 @@ def main():
     parser.add_argument('-input_file', default='data/even_mnist.csv', help='Relative path to data file.', type=str)
     parser.add_argument('-param_file', default='param/parameters.json', help='Relative path to json parameter file.', type=str)
     parser.add_argument('-n', default=100, help='Number of sample images to generate.', type=int)
-    parser.add_argument('--verbosity', action='store_true', help='Enable verbose version of the program.')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose version of the program.')
 
     args = parser.parse_args()
     num_epochs = args.epochs
     input_file = args.input_file
     param_file = args.param_file
     n_outputs = args.n
-    verbosity = args.verbosity
+    verbosity = args.verbose
 
     # Get the absolute file path from the relative
     current_dir = os.path.abspath(os.path.dirname(__file__))
