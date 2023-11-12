@@ -1,0 +1,6 @@
+{
+    "learning_rate": 0.001,
+    "batch_size": 20,
+    "testing_size": 5000,
+    "output_folder": "output/"
+}
