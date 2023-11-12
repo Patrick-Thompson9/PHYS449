@@ -12,7 +12,22 @@ from torch.utils.data import TensorDataset, DataLoader
 from torchvision.utils import save_image
 
 class VariationalAutoencoder(nn.Module):
+    '''
+    Variational Autoencoder class
+    '''
     def __init__(self, input_size, hidden_size1, hidden_size2, latent_size):
+        '''
+        Initialize the variational autoencoder
+
+        Inputs:
+        - input_size: The number of input features
+        - hidden_size1: The number of nodes in the first hidden layer
+        - hidden_size2: The number of nodes in the second hidden layer
+        - latent_size: The number of nodes in the latent layer
+
+        Outputs:
+        - None
+        '''
         super(VariationalAutoencoder, self).__init__()
         
         # Encoder
@@ -29,6 +44,16 @@ class VariationalAutoencoder(nn.Module):
         self.decode3 = nn.Linear(hidden_size1, input_size)
 
     def encode(self, x):
+        '''
+        Encode the input data
+        
+        Inputs:
+        - x: The input data
+        
+        Outputs:
+        - mean: The mean of the latent layer
+        - var: The variance of the latent layer
+        '''
         x = F.relu(self.encode1(x))
         x = F.relu(self.encode2(x))
         mean = self.fc_mu(x)
@@ -36,12 +61,32 @@ class VariationalAutoencoder(nn.Module):
         return mean, var
 
     def decode(self, x):
+        '''
+        Decode the latent layer
+
+        Inputs:
+        - x: The latent layer
+
+        Outputs:
+        - x: The reconstructed data
+        '''
         x = F.relu(self.decode1(x))
         x = F.relu(self.decode2(x))
         x = torch.sigmoid(self.decode3(x))
         return x
 
     def forward(self, x):
+        '''
+        Forward pass through the network
+        
+        Inputs:
+        - x: The input data
+
+        Outputs:
+        - x: The reconstructed data
+        - mu: The mean of the latent layer
+        - var: The variance of the latent layer
+        '''
         mu, log_var = self.encode(x.view(-1, 196))
         std = torch.exp(0.5 * log_var)
         eps = torch.randn_like(std)
@@ -49,6 +94,18 @@ class VariationalAutoencoder(nn.Module):
         return self.decode(z), mu, log_var
 
 def load_data(file_path, test_size, batch_size):
+    '''
+    Load and preprocess the data
+
+    Inputs:
+    - file_path: The path to the data file
+    - test_size: The number of testing samples
+    - batch_size: The number of samples per batch
+
+    Outputs:
+    - train_loader: The training data loader
+    - test_loader: The testing data loader
+    '''
     data = pd.read_csv(file_path, delimiter=' ')
 
     # Training data split
@@ -74,11 +131,36 @@ def load_data(file_path, test_size, batch_size):
     return train_loader, test_loader
 
 def loss_function(recon_x, x, mu, log_var):
+    '''
+    Calculate the loss function
+    
+    Inputs:
+    - recon_x: The reconstructed data
+    - x: The input data
+    - mu: The mean of the latent layer
+    - log_var: The log variance of the latent layer
+
+    Outputs:
+    - BCE + KLD: The loss function
+    '''
     BCE = F.binary_cross_entropy(recon_x, x.view(-1, 196), reduction='sum')
     KLD = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
     return BCE + KLD
 
 def train(model, dataloader, optimizer, epoch, verbosity):
+    '''
+    Train the model
+
+    Inputs:
+    - model: The model to train
+    - dataloader: The data loader
+    - optimizer: The optimizer
+    - epoch: The current epoch
+    - verbosity: Whether program is in verbose mode
+
+    Outputs:
+    - average_loss: The average loss over the epoch
+    '''
     model.train()
     total_loss = 0
     count = 0
@@ -99,6 +181,16 @@ def train(model, dataloader, optimizer, epoch, verbosity):
     return average_loss
 
 def test(model, dataloader):
+    '''
+    Test the model
+
+    Inputs:
+    - model: The model to test
+    - dataloader: The data loader
+
+    Outputs:
+    - test_loss: The average loss over the test set
+    '''
     model.eval()
     test_loss = 0
 
@@ -111,6 +203,18 @@ def test(model, dataloader):
     return test_loss
 
 def create_sample_images(model, result_dir, n_outputs, verbosity):
+    '''
+    Create sample images
+
+    Inputs:
+    - model: The trained model
+    - result_dir: The directory to save the images
+    - n_outputs: The number of images to create
+    - verbosity: Whether program is in verbose mode
+
+    Outputs:
+    - None
+    '''
     # Load the trained model
     model = torch.load(result_dir+'model.pth')
 
