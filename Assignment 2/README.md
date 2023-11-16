@@ -1,12 +1,11 @@
 # PHYS449 Assignment 2
 - Boltzmann machine to predict Ising model coupler values
 - Plots loss vs epochs
-
+- two hidden layers with RelU activation functions
 
 ## AI Statement
 - All code was generated through many chatgpt prompts
 - Model structure was optimized through my knowledge as well as chatgpt suggestions
-- two hidden layers with RelU activation functions
 
 ## Dependencies
 
