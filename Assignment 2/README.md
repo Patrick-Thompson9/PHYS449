@@ -17,7 +17,7 @@
 
 ## Running `main.py`
 
-To run `main.py`, use
+To run `main.py`, use (where 'data/in.txt' is the default relative path to the input data file):
 
 ```sh
 python main.py data/in.txt
