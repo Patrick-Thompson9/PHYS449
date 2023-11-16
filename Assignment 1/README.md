@@ -1,4 +1,4 @@
-# PHYS449
+# PHYS449 Assignment 1
 - Recurent Neural Network for binary multiplication
 - RelU activation function
 - Sigmoid output layer
