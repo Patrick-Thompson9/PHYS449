@@ -1,6 +1,7 @@
 # PHYS449 Assignment 3
 - Variational Autoencoder for writing even numbers
 - plots loss vs epochs
+- Two hidden layers with RelU activation functions
 
 ## AI Statement
 - Nearly all code was written using chatgpt, small features of functions written by myself
