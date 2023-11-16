@@ -1,5 +1,6 @@
-# PHYS449
+# PHYS449 Assignment 2
 - Boltzmann machine to predict Ising model coupler values
+- Plots loss vs epochs
 
 ## AI Statement
 - All code was generated through many chatgpt prompts
